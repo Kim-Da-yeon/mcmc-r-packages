@@ -1,0 +1,3 @@
+useDynLib(C.SamcPackage, .registration = TRUE)
+importFrom(Rcpp, evalCpp)
+export(run_samc_simulation)
