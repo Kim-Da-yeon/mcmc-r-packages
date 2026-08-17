@@ -1,0 +1,13 @@
+Package: C.SamcPackage
+Type: Package
+Title: SAMC Simulation Package using C code and Rcpp
+Version: 0.1.0
+Author: Kim Dayeon
+Maintainer: Kim Dayeon <dayun0405@gmail.com>
+Description: This package integrates C code for SAMC simulation into R using Rcpp.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: Rcpp
+LinkingTo: Rcpp
+RoxygenNote: 7.3.2
