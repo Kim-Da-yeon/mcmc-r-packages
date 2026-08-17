@@ -144,5 +144,15 @@ This repo was assembled from four single-package repositories, now archived:
 - [`Kim-Da-yeon/P.SamcPackage`](https://github.com/Kim-Da-yeon/P.SamcPackage)
 - [`Kim-Da-yeon/myNimblePackage`](https://github.com/Kim-Da-yeon/myNimblePackage)
 
-Each was merged with `git subtree`, so `git log -- <directory>` still shows that
-package's original commits.
+Each was merged with `git subtree`, so the original commits are preserved in this
+repository rather than replayed. They are reachable as the second parent of the
+corresponding merge, e.g.
+
+```sh
+git log --oneline "$(git log --format=%H --grep='import R.SamcPackage' -1)^2"
+```
+
+A plain `git log -- R.SamcPackage/` will *not* list them: those commits recorded
+paths at the repository root (`DESCRIPTION`, not `R.SamcPackage/DESCRIPTION`), so
+path filtering stops at the merge. There is little to miss either way — each
+original repo held only one or two commits.
