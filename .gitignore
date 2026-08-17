@@ -1,0 +1,28 @@
+# R
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rcheck/
+*.tar.gz
+
+# Compiled objects from src/
+*.o
+*.so
+*.dll
+*.dylib
+symbols.rds
+
+# Simulation output written by the packages at runtime
+hist.txt
+bb.hist
+
+# Python
+__pycache__/
+*.py[cod]
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
