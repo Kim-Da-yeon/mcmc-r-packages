@@ -2,8 +2,11 @@
 .Rhistory
 .Rapp.history
 .RData
+.Rdata
 .Ruserdata
 .Rproj.user/
+.httr-oauth
+.quarto
 *.Rcheck/
 *.tar.gz
 
