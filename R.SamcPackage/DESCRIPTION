@@ -1,11 +1,18 @@
 Package: R.SamcPackage
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Type: Package
+Title: SAMC Simulation in Pure R
+Version: 0.1.0
+Authors@R:
+    person("Dayeon", "Kim", , "dayun0405@gmail.com", role = c("aut", "cre"))
+Description: A pure R implementation of Example 1 from Liang, Liu and
+    Carroll (2007), "Stochastic Approximation in Monte Carlo Computation"
+    (Journal of the American Statistical Association, 102(477), 305-320).
+    Runs stochastic approximation Monte Carlo over a 10-state space
+    partitioned into 5 subsets and reports the estimated subset weights,
+    visiting frequencies, and the gain-factor estimation error. This is
+    the reference implementation of the three language backends in this
+    repository; see also 'C.SamcPackage' and 'P.SamcPackage'.
+License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2

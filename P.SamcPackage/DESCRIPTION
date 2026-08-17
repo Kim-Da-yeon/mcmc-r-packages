@@ -1,10 +1,15 @@
 Package: P.SamcPackage
 Type: Package
-Title: What the Package Does (Title Case)
+Title: SAMC Simulation Package using Python and reticulate
 Version: 0.1.0
 Authors@R: c(person("Dayeon", "Kim", email = "dayun0405@gmail.com", role = c("aut", "cre")))
-Description: More about what it does (maybe more than one line). Continuation lines should be indented.
-License: What license is it under?
+Description: Runs Example 1 from Liang, Liu and Carroll (2007),
+    "Stochastic Approximation in Monte Carlo Computation" (Journal of the
+    American Statistical Association, 102(477), 305-320) through a Python
+    implementation, called from R via 'reticulate'. The Python source
+    ships in inst/extdata and requires NumPy. See also 'R.SamcPackage'
+    for the pure R reference implementation.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2

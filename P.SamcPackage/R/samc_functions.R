@@ -4,14 +4,14 @@
 #' reticulate를 통해 run_simulation() 함수를 실행합니다.
 #'
 #' @return run_simulation()의 실행 결과를 반환합니다.
+#' @importFrom reticulate source_python
 #' @export
 run_samc_simulation <- function() {
   if (!requireNamespace("reticulate", quietly = TRUE)) {
-    install.packages("reticulate")
+    stop("'reticulate' 패키지가 필요합니다. install.packages(\"reticulate\")로 먼저 설치하세요.")
   }
-  library(reticulate)
 
-  # SAMC.py 파일 경로 (패키지 내부 inst/extdata 폴더)
+  # SAMC 파일 경로 (패키지 내부 inst/extdata 폴더)
   py_file <- system.file("extdata", "SAMC.py", package = "P.SamcPackage")
   if (py_file == "") {
     stop("SAMC.py 파일이 inst/extdata 폴더에 없습니다.")

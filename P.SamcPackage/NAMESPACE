@@ -1,2 +1,2 @@
-importFrom(Rcpp, evalCpp)
+importFrom(reticulate, source_python)
 export(run_samc_simulation)
