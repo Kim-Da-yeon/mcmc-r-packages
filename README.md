@@ -1,8 +1,12 @@
 # mcmc-r-packages
 
-R packages built while learning package authoring around MCMC methods. Four
-previously separate repositories, consolidated here with their full commit
-history intact.
+**The same SAMC algorithm packaged three ways — pure R, C via Rcpp, Python via reticulate — plus a minimal NIMBLE example**
+
+> R package authoring around MCMC methods · Algorithm: Liang, Liu & Carroll (2007), Example 1 · Four previously separate repositories, consolidated with their history intact
+
+---
+
+## Overview
 
 | Directory                              | What it is                                    | Backend                | Entry point               |
 |----------------------------------------|-----------------------------------------------|------------------------|---------------------------|
@@ -13,8 +17,6 @@ history intact.
 
 Each directory is a standalone R package — install whichever you need. Inline
 documentation (roxygen comments) is written in Korean.
-
----
 
 ## The SAMC example
 
@@ -73,9 +75,7 @@ The differing initial draw and the separate RNG streams mean the three will not
 reproduce each other run-for-run even with a fixed seed. Only the converged
 summaries are comparable.
 
----
-
-## Installation and use
+## Installation
 
 All four are installed from source. From the repository root:
 
@@ -107,8 +107,6 @@ model <- myNimblePackage::createNimbleModel()   # compiles x ~ dnorm(0, 1)
 Note that a 500,000-iteration run in pure R takes a long while; use
 `C.SamcPackage` if you just want the numbers.
 
----
-
 ## Provenance
 
 - The SAMC algorithm and the Example 1 setup are from Liang, Liu & Carroll
@@ -118,9 +116,9 @@ Note that a 500,000-iteration run in pure R takes a long while; use
   are translations of that program, wrapped as R packages.
 - `C.SamcPackage/src/nrutil.c` and `nrutil.h` are the array-allocation
   utilities from *자체 구현 in C* (Press, Teukolsky, Vetterling &
-  Flannery). See [the note below](#open-issues).
+  Flannery). See [the note below](#limitations).
 
-## Open issues
+## Limitations
 
 - **`nrutil` licensing.** *자체 구현* source is copyrighted and its
   license does not permit redistribution, which conflicts with this
