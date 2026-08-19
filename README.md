@@ -1,156 +1,80 @@
 # mcmc-r-packages
 
-**The same SAMC algorithm packaged three ways — pure R, C via Rcpp, Python via reticulate — plus a minimal NIMBLE example**
-
-> R package authoring around MCMC methods · Algorithm: Liang, Liu & Carroll (2007), Example 1 · Four previously separate repositories, consolidated with their history intact
+SAMC (Liang, Liu & Carroll 2007, Example 1)를 R 패키지 세 벌로 구현 — 순수 R, C/Rcpp, Python/reticulate. NIMBLE 최소 예제 포함.
 
 ---
 
-## Overview
+## 구성
 
-| Directory                              | What it is                                    | Backend                | Entry point               |
-|----------------------------------------|-----------------------------------------------|------------------------|---------------------------|
-| [`R.SamcPackage/`](R.SamcPackage/)     | SAMC, reference implementation                | Pure R                 | `run_simulation()`        |
-| [`C.SamcPackage/`](C.SamcPackage/)     | SAMC, compiled                                | C++/C via **Rcpp**     | `run_samc_simulation()`   |
-| [`P.SamcPackage/`](P.SamcPackage/)     | SAMC, Python interop                          | Python via **reticulate** | `run_samc_simulation()` |
-| [`myNimblePackage/`](myNimblePackage/) | Minimal NIMBLE model-compilation example      | **nimble**             | `createNimbleModel()`     |
+| 디렉터리 | 백엔드 | 진입점 |
+|---|---|---|
+| [`R.SamcPackage/`](R.SamcPackage/) | 순수 R | `run_simulation()` |
+| [`C.SamcPackage/`](C.SamcPackage/) | C / Rcpp | `run_samc_simulation()` |
+| [`P.SamcPackage/`](P.SamcPackage/) | Python / reticulate | `run_samc_simulation()` |
+| [`myNimblePackage/`](myNimblePackage/) | nimble | `createNimbleModel()` |
 
-Each directory is a standalone R package — install whichever you need. Inline
-documentation (roxygen comments) is written in Korean.
+각 디렉터리가 독립 R 패키지. roxygen 주석은 한국어.
 
-## The SAMC example
+## 알고리즘
 
-The three `*.SamcPackage` directories all implement **the same algorithm**:
-Example 1 from
+SAMC는 상태공간을 부분집합으로 나누고 부분집합별 가중치를 적응적으로 갱신해, 목표분포의 모드에 갇히지 않고 각 부분집합을 지정 비율로 방문한다.
 
-> Liang, F., Liu, C., & Carroll, R. J. (2007). Stochastic Approximation in
-> Monte Carlo Computation. *Journal of the American Statistical Association*,
-> **102**(477), 305–320.
+| 설정 | 값 |
+|---|---|
+| 상태공간 `N` | 10 |
+| 부분집합 `NE` | 5 |
+| 비정규화 질량 `f(x)` | 1, 100, 2, 1, 3, 3, 1, 200, 2, 1 |
+| 참 가중치 | 1, 1, 2, 2, 4 |
+| 목표 표본분포 `π` | 균등, 부분집합당 1/5 |
+| 반복 | 500,000 |
+| 이득 계수 | `γ_t = t₀ / max(t₀, t)`, `t₀ = 10` |
 
-Stochastic Approximation Monte Carlo (SAMC) samples a state space partitioned
-into subsets while adaptively adjusting per-subset weights, so that the sampler
-visits every subset at a prescribed rate instead of getting stuck in the modes
-of the target. The toy problem used here makes that behaviour easy to check:
+`f(x)` 값으로 부분집합 배정 (200→1, 100→2, 3→3, 2→4, 그 외→5). `f`가 두 자릿수 배 차이라 일반 MH는 상태 2·8에 집중되고, SAMC의 가중치 갱신이 이를 균등 목표로 평탄화. 판정 기준은 부분집합별 방문 비율 20% 수렴과 `Estimation Error of g`.
 
-| Setting                             | Value                          |
-|-------------------------------------|--------------------------------|
-| State space size `N`                | 10                             |
-| Number of subsets `NE`              | 5                              |
-| Unnormalized mass `f(x)`            | `1, 100, 2, 1, 3, 3, 1, 200, 2, 1` |
-| True subset weights                 | `1, 1, 2, 2, 4`                |
-| Desired sampling distribution `π`   | uniform, `1/5` per subset      |
-| Iterations                          | 500,000                        |
-| Gain factor                         | `γ_t = t₀ / max(t₀, t)`, `t₀ = 10` |
+제안 행렬 `Q`는 고정된 비대칭 10×10 확률행렬. R·C는 공백 구분 `Q.tranE`, Python은 콤마 구분 `Q.csv`를 읽으며 **두 파일의 수치는 동일**(자릿수까지 일치 확인).
 
-States are grouped into subsets by their `f(x)` value (`200 → 1`, `100 → 2`,
-`3 → 3`, `2 → 4`, everything else `→ 5`). Because `f` spans two orders of
-magnitude, an ordinary Metropolis–Hastings sampler concentrates on states 2 and
-8; SAMC's weight updates flatten that out toward the uniform target. Success is
-measured by two things the run reports:
+### 세 구현의 차이
 
-- **visiting frequency per subset** should approach 20% each, and
-- **`Estimation Error of g` **, the χ²-style distance between the estimated
-  weights `exp(θ)` and the true `weight` vector, should be small.
-
-The proposal matrix `Q` (a fixed, non-symmetric 10×10 stochastic matrix) ships
-with each package. `R.SamcPackage` and `C.SamcPackage` read it as
-space-delimited `inst/extdata/Q.tranE`; `P.SamcPackage` reads the
-comma-delimited `inst/extdata/Q.csv`. **The two files hold the same matrix** —
-verified numerically identical to the last digit, differing only in delimiter
-and trailing-zero formatting.
-
-### Differences between the three backends
-
-They are not drop-in equivalents. Known discrepancies:
-
-| | `R.SamcPackage` | `C.SamcPackage` | `P.SamcPackage` |
+|  | 순수 R | C/Rcpp | Python |
 |---|---|---|---|
-| Return value | `list(hist, FV, fvalue)` | value from `run_samc_ex1_R()` | `list(final_x, final_k1, FV)` |
-| Prints convergence table | yes | yes (from C) | no |
-| Writes results to disk | `hist.txt` | `bb.hist` | no |
-| Reports gain-factor error | yes | yes | **no** — the output section is omitted in `SAMC.py` |
-| Initial state draw | `round(runif(1) * 10)` | C `rand()` | `round(uniform(0.1, 1.0) * 10)` |
+| 반환값 | `list(hist, FV, fvalue)` | `run_samc_ex1_R()` 반환값 | `list(final_x, final_k1, FV)` |
+| 수렴 표 출력 | 있음 | 있음 | 없음 |
+| 파일 저장 | `hist.txt` | `bb.hist` | 없음 |
+| 이득계수 오차 보고 | 있음 | 있음 | 없음 (`SAMC.py` 출력부 생략) |
+| 초기 상태 추출 | `round(runif(1)*10)` | C `rand()` | `round(uniform(0.1,1.0)*10)` |
 
-The differing initial draw and the separate RNG streams mean the three will not
-reproduce each other run-for-run even with a fixed seed. Only the converged
-summaries are comparable.
+초기 추출과 난수 스트림이 달라 seed를 고정해도 실행 단위 재현은 불가. 수렴 후 요약값만 비교 가능.
 
-## Installation
-
-All four are installed from source. From the repository root:
+## 설치
 
 ```r
 install.packages("devtools")
 
-devtools::install("R.SamcPackage")
-library(R.SamcPackage)
-res <- run_simulation()          # ~500k iterations, prints progress every 1000
+devtools::install("R.SamcPackage");  R.SamcPackage::run_simulation()
+devtools::install("C.SamcPackage");  C.SamcPackage::run_samc_simulation()   # C++17 툴체인 필요
+devtools::install("P.SamcPackage");  P.SamcPackage::run_samc_simulation()   # numpy 가시 필요
+devtools::install("myNimblePackage"); myNimblePackage::createNimbleModel()
 ```
 
-```r
-# needs a C++17 toolchain (Rtools on Windows, Xcode CLT on macOS)
-devtools::install("C.SamcPackage")
-C.SamcPackage::run_samc_simulation()
-```
+순수 R로 500,000 반복은 오래 걸림. 수치만 필요하면 `C.SamcPackage`.
 
-```r
-# needs a Python installation with numpy visible to reticulate
-devtools::install("P.SamcPackage")
-P.SamcPackage::run_samc_simulation()
-```
+## 출처
 
-```r
-devtools::install("myNimblePackage")
-model <- myNimblePackage::createNimbleModel()   # compiles x ~ dnorm(0, 1)
-```
+- 알고리즘·예제 설정: Liang, F., Liu, C., & Carroll, R. J. (2007). Stochastic Approximation in Monte Carlo Computation. *JASA*, 102(477), 305–320.
+- 이식 원본: 소스 헤더에 `Cheon, Sooyoung (2010-06-14)` 명시
+- `C.SamcPackage/src/nrutil.c`, `nrutil.h`: 1-based 배열·행렬 할당용 자체 구현 (malloc 래퍼, 외부 코드 아님)
 
-Note that a 500,000-iteration run in pure R takes a long while; use
-`C.SamcPackage` if you just want the numbers.
+## 미해결
 
-## Provenance
+- 출력이 append 모드. 반복 실행 시 `bb.hist`·`hist.txt`에 누적
+- 반복 수 등 파라미터가 하드코딩. `Niter`부터 인자화 필요
 
-- The SAMC algorithm and the Example 1 setup are from Liang, Liu & Carroll
-  (2007), cited above.
-- The original program these packages are ported from is credited in the source
-  header as **Cheon, Sooyoung (2010-06-14)**. The R, C and Python versions here
-  are translations of that program, wrapped as R packages.
-- `C.SamcPackage/src/nrutil.c` and `nrutil.h` are the array-allocation
-  utilities from *자체 구현 in C* (Press, Teukolsky, Vetterling &
-  Flannery). See [the note below](#limitations).
+## 이력
 
-## Limitations
-
-- **`nrutil` licensing.** *자체 구현* source is copyrighted and its
-  license does not permit redistribution, which conflicts with this
-  directory being public and declared `GPL-3`. Only six routines are actually
-  used (`ivector`, `dvector`, `dmatrix` and their `free_*` counterparts), all
-  thin 1-indexed wrappers over `malloc`, so replacing them with `R_alloc`-based
-  equivalents would resolve it.
-- `C.SamcPackage` writes its output to a fixed `bb.hist` in the working
-  directory, and `R.SamcPackage` to `hist.txt`, in both cases appending rather
-  than truncating. Repeated runs accumulate into the same file.
-- Neither the number of iterations nor any other parameter is exposed as a
-  function argument; they are hard-coded. `Niter` would be the obvious first
-  argument to add.
-
-## Repository history
-
-This repo was assembled from four single-package repositories, now archived:
-
-- [`Kim-Da-yeon/R.SamcPackage`](https://github.com/Kim-Da-yeon/R.SamcPackage)
-- [`Kim-Da-yeon/C.SamcPackage`](https://github.com/Kim-Da-yeon/C.SamcPackage)
-- [`Kim-Da-yeon/P.SamcPackage`](https://github.com/Kim-Da-yeon/P.SamcPackage)
-- [`Kim-Da-yeon/myNimblePackage`](https://github.com/Kim-Da-yeon/myNimblePackage)
-
-Each was merged with `git subtree`, so the original commits are preserved in this
-repository rather than replayed. They are reachable as the second parent of the
-corresponding merge, e.g.
+단일 패키지 저장소 4개를 `git subtree`로 병합, 원본은 archive. 원 커밋은 각 병합의 두 번째 부모로 보존.
 
 ```sh
 git log --oneline "$(git log --format=%H --grep='import R.SamcPackage' -1)^2"
 ```
 
-A plain `git log -- R.SamcPackage/` will *not* list them: those commits recorded
-paths at the repository root (`DESCRIPTION`, not `R.SamcPackage/DESCRIPTION`), so
-path filtering stops at the merge. There is little to miss either way — each
-original repo held only one or two commits.
+원 커밋은 저장소 루트 기준 경로를 기록하므로 `git log -- R.SamcPackage/`로는 조회되지 않음.
