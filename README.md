@@ -79,3 +79,4 @@ git log --oneline "$(git log --format=%H --grep='import R.SamcPackage' -1)^2"
 
 원 커밋은 저장소 루트 기준 경로를 기록하므로 `git log -- R.SamcPackage/`로는 조회되지 않음.
 
+
